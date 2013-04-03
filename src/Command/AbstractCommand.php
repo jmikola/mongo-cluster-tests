@@ -65,7 +65,7 @@ abstract class AbstractCommand extends Command
         }
 
         if (null !== ($value = $input->getOption('readPreferenceTags'))) {
-            $options['readPreferenceTags'] = $this->decodeJson($value);
+            $options['readPreferenceTags'] = $this->decodeJson($value, true);
         }
 
         if (null !== ($value = $input->getOption('w'))) {
@@ -82,10 +82,11 @@ abstract class AbstractCommand extends Command
      * Decodes a JSON string.
      *
      * @param string $json
+     * @param boolean $assoc
      * @return mixed
      * @throws JsonDecodeException if JSON is invalid
      */
-    protected function decodeJson($json)
+    protected function decodeJson($json, $assoc = false)
     {
         $errors = array(
             \JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
@@ -95,7 +96,7 @@ abstract class AbstractCommand extends Command
             \JSON_ERROR_UTF8 => 'UTF-8 encoding error',
         );
 
-        $value = json_decode($json);
+        $value = json_decode($json, $assoc);
         $error = json_last_error();
 
         if ($error === \JSON_ERROR_NONE) {
