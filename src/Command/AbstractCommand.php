@@ -136,6 +136,6 @@ EOF
     {
         $readPreference = $this->mongo->getReadPreference();
 
-        return $readPreference['tagsets'];
+        return empty($readPreference['tagsets']) ? array() : $readPreference['tagsets'];
     }
 }
