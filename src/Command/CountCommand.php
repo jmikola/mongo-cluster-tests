@@ -32,10 +32,16 @@ EOF
         $query = $this->decodeJson($input->getOption('query'));
         $cmd = $this->db->selectCollection('$cmd');
 
+        $readPreferenceTags = $this->getReadPreferenceTags();
+        $readPreferences = null !== $input->getOption('readPreference')
+            ? array($input->getOption('readPreference'))
+            : $this->readPreferences;
+
         $output->writeln(sprintf('Counting documents in %s matching: %s', $this->collection, json_encode($query)));
+        $output->writeln(sprintf('Using read preference tags: %s', json_encode($readPreferenceTags)));
 
         foreach ($this->readPreferences as $readPreference) {
-            $this->collection->setReadPreference($readPreference);
+            $this->collection->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
             $eventName = 'count:' . $readPreference;
             $this->stopwatch->start($eventName);
 
@@ -53,7 +59,7 @@ EOF
         $output->writeln(sprintf('Counting documents via findOne() on %s', $cmd));
 
         foreach ($this->readPreferences as $readPreference) {
-            $cmd->setReadPreference($readPreference);
+            $cmd->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
             $eventName = '$cmd:' . $readPreference;
             $this->stopwatch->start($eventName);
 

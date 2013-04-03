@@ -33,13 +33,34 @@ abstract class AbstractCommand extends Command
             ->addOption('username', null, InputOption::VALUE_OPTIONAL, 'MongoClient auth username')
             ->addOption('password', null, InputOption::VALUE_OPTIONAL, 'MongoClient auth password')
             ->addOption('readPreference', null, InputOption::VALUE_OPTIONAL, 'MongoClient read preference')
-            ->addOption('readPreferenceTags', null, InputOption::VALUE_OPTIONAL, 'MongoClient read preference tags (JSON)')
+            ->addOption('readPreferenceTags', null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'MongoClient read preference tags')
             ->addOption('replicaSet', null, InputOption::VALUE_OPTIONAL, 'MongoClient replica set')
             ->addOption('connectTimeoutMS', null, InputOption::VALUE_OPTIONAL, 'MongoClient connection timeout (milliseconds)')
             ->addOption('socketTimeoutMS', null, InputOption::VALUE_OPTIONAL, 'MongoClient socket timeout (milliseconds)', 30000)
             ->addOption('w', null, InputOption::VALUE_OPTIONAL, 'MongoClient write concern', 1)
             ->addOption('wTimeout', null, InputOption::VALUE_OPTIONAL, 'MongoClient write concern timeout (milliseconds)', 10000)
             ->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'MongoCursor timeout (milliseconds)', 30000)
+            ->setHelp(<<<'EOF'
+<info>Common Options</info>
+
+Write concern may be specified as a number or string (e.g. "majority").
+
+Read preferences must correspond to a valid read preference string:
+
+   * primary
+   * primaryPreferred
+   * secondary
+   * secondaryPreferred
+   * nearest "primary",
+
+Read preference tags follow the format "key:value,key:value" for each tag set.
+Multiple read preference tags may be specified like so:
+
+  --readPreferenceTags dc:east,use:reporting --readPreferenceTags dc:west
+
+Please see the MongoClient::__construct() documentation for more information.
+EOF
+            )
         ;
     }
 
@@ -64,8 +85,8 @@ abstract class AbstractCommand extends Command
             $options['db'] = $value;
         }
 
-        if (null !== ($value = $input->getOption('readPreferenceTags'))) {
-            $options['readPreferenceTags'] = $this->decodeJson($value, true);
+        if (array() !== ($value = $input->getOption('readPreferenceTags'))) {
+            $options['readPreferenceTags'] = $value;
         }
 
         if (null !== ($value = $input->getOption('w'))) {
@@ -104,5 +125,17 @@ abstract class AbstractCommand extends Command
         }
 
         throw new JsonDecodeException(isset($errors[$error]) ? $errors[$error] : 'Unknown error');
+    }
+
+    /**
+     * Returns the read preference tags from MongoClient.
+     *
+     * @return array
+     */
+    protected function getReadPreferenceTags()
+    {
+        $readPreference = $this->mongo->getReadPreference();
+
+        return $readPreference['tagsets'];
     }
 }

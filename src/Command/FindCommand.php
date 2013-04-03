@@ -31,10 +31,16 @@ EOF
     {
         $query = $this->decodeJson($input->getOption('query'));
 
-        $output->writeln(sprintf('Finding documents in %s matching: %s', $this->collection, json_encode($query)));
+        $readPreferenceTags = $this->getReadPreferenceTags();
+        $readPreferences = null !== $input->getOption('readPreference')
+            ? array($input->getOption('readPreference'))
+            : $this->readPreferences;
 
-        foreach ($this->readPreferences as $readPreference) {
-            $this->collection->setReadPreference($readPreference);
+        $output->writeln(sprintf('Finding documents in %s matching: %s', $this->collection, json_encode($query)));
+        $output->writeln(sprintf('Using read preference tags: %s', json_encode($readPreferenceTags)));
+
+        foreach ($readPreferences as $readPreference) {
+            $this->collection->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
 
             $eventName = 'find:' . $readPreference;
             $this->stopwatch->start($eventName);
