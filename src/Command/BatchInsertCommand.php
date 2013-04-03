@@ -26,22 +26,30 @@ class BatchInsertCommand extends InsertCommand
         $batch = array();
 
         $stopwatch = new Stopwatch();
-        $stopwatch->start('insert');
+        $stopwatch->start('batch-insert');
 
         foreach ($generator as $i => $document) {
             $batch[] = $document;
 
-            if (0 === $i % $batchSize) {
-                $collection->batchInsert($batch);
+            if (0 === ($i + 1) % $batchSize) {
+                $this->doBatchInsert($collection, $batch, $stopwatch, $output);
                 $batch = array();
             }
         }
 
         if (!empty($batch)) {
-            $collection->batchInsert($batch);
+            $this->doBatchInsert($collection, $batch, $stopwatch, $output);
         }
 
-        $event = $stopwatch->stop('insert');
-        $output->writeln(sprintf('Inserted %d documents into %s in %.3f seconds.', count($generator), $collection, $event->getDuration() / 1000));
+        $event = $stopwatch->stop('batch-insert');
+        $output->writeln(sprintf('Batch insertion of %d documents completed in %.3f seconds.', count($generator), $event->getDuration() / 1000));
+    }
+
+    private function doBatchInsert(\MongoCollection $collection, array $batch, Stopwatch $stopwatch, OutputInterface $output)
+    {
+        $collection->batchInsert($batch);
+        $event = $stopwatch->lap('batch-insert');
+        $periods = $event->getPeriods();
+        $output->writeln(sprintf('Inserted %d documents into %s in %.3f seconds.', count($batch), $collection, end($periods)->getDuration() / 1000));
     }
 }
