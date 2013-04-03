@@ -24,7 +24,7 @@ class InsertCommand extends Command
             ))
             ->setDescription('Insert documents')
             ->setHelp(<<<'EOF'
-Documents will contain an "x" field with a random 64-byte value and a "y" field
+Documents will contain an "x" field with a random integer value and a "y" field
 with a constant string of a configurable size.
 EOF
             )
@@ -54,7 +54,7 @@ EOF
 
         for ($i = 0; $i < $docs; $i++) {
             $collection->insert(array(
-                'x' => hash('sha256', mt_rand()),
+                'x' => mt_rand(),
                 'y' => $value,
             ));
         }
