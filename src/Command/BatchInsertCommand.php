@@ -15,6 +15,13 @@ class BatchInsertCommand extends InsertCommand
             ->setName('batch-insert')
             ->setDescription('Insert documents in batches')
         ;
+
+        $help = <<<'EOF'
+This commands extends <info>insert</info> by inserting documents in batches. The batch
+size is calculated automatically based on the size of each generated document.
+EOF;
+
+        $this->setHelp($help . "\n\n" . $this->getHelp());
     }
 
     protected function doInsert(DocumentGenerator $generator, OutputInterface $output)

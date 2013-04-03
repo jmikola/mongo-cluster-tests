@@ -14,17 +14,24 @@ class CountCommand extends AbstractCommand
 
         $this
             ->setName('count')
-            ->addOption('query', null, InputOption::VALUE_OPTIONAL, 'Query criteria (JSON)', '{}')
             ->setDescription('Count documents')
-            ->setHelp(<<<'EOF'
-Count documents matching the given criteria. The command will be executed using
-all possible read preferences.
+            ->addOption('query', null, InputOption::VALUE_OPTIONAL, 'Query criteria (JSON)', '{}')
+        ;
+
+        $help = <<<'EOF'
+Count documents matching the given criteria.
+
+If a read preferenec has not been specified, the query will be executed once for
+each possible read preference. If read preference tags have been specified, they
+will be re-used for each query.
 
 The query argument must be valid JSON. Object properties and strings must be
-enclosed in double quotes.
-EOF
-            )
-        ;
+enclosed in double quotes. Additionally, it may be necessary to wrap the query
+with single quotes to disable evaluation of query operators (prefixed by <info>$</info>)
+as shell variables.
+EOF;
+
+        $this->setHelp($help . "\n\n" . $this->getHelp());
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)

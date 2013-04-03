@@ -15,17 +15,32 @@ class InsertCommand extends AbstractCommand
 
         $this
             ->setName('insert')
-            ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting (removes indexes and sharding)')
-            ->addOption('remove', null, InputOption::VALUE_NONE, 'Remove before inserting (preserves indexes)')
+            ->setDescription('Insert documents')
+            ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting')
+            ->addOption('remove', null, InputOption::VALUE_NONE, 'Remove before inserting')
             ->addOption('docs', null, InputOption::VALUE_OPTIONAL, 'Number of documents to insert', 10000)
             ->addOption('size', null, InputOption::VALUE_OPTIONAL, 'Constant field size (bytes)', 4096)
-            ->setDescription('Insert documents')
-            ->setHelp(<<<'EOF'
-Documents will contain an "x" field with a random integer value and a "y" field
-with a constant string of a configurable size.
-EOF
-            )
         ;
+
+        $help = <<<'EOF'
+Documents inserted to the database will have the following structure:
+
+    {
+        "_id": <info><ObjectId></info>,
+        "x": <info><random-integer></info>,
+        "y": <info><fixed-string></info>
+    }
+
+The number of documents to be inserted is configurable, as is the size of the
+fixed string.
+
+The <info>drop</info> and <info>remove</info> options may be used to clear the collection of existing
+documents before insertion. When inserting into a sharded cluster, dropping the
+collection will remove it from the shard configuration and likewise delete the
+shard key's index. In that case, <info>remove</info> may be preferable.
+EOF;
+
+        $this->setHelp($help . "\n\n" . $this->getHelp());
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
