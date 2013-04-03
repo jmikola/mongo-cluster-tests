@@ -29,7 +29,7 @@ class FindCommand extends Command
                 new InputOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017'),
                 new InputOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test'),
                 new InputOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test'),
-                new InputOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Query timeout (milliseconds)', 5000),
+                new InputOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Query timeout (milliseconds)', 30000),
             ))
             ->setDescription('Find documents')
             ->setHelp(<<<'EOF'
