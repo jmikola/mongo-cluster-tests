@@ -69,7 +69,7 @@ EOF
         $server = $input->getOption('server');
         $options = array();
 
-        foreach (array('username', 'password', 'readPreference') as $option) {
+        foreach (array('username', 'password', 'readPreference', 'replicaSet') as $option) {
             if (null !== ($value = $input->getOption($option))) {
                 $options[$option] = $value;
             }
