@@ -24,13 +24,11 @@ class FindCommand extends Command
     {
         $this
             ->setName('find')
-            ->setDefinition(array(
-                new InputArgument('query', InputArgument::OPTIONAL, 'Query criteria (JSON)', '{}'),
-                new InputOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017'),
-                new InputOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test'),
-                new InputOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test'),
-                new InputOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Query timeout (milliseconds)', 30000),
-            ))
+            ->addArgument('query', InputArgument::OPTIONAL, 'Query criteria (JSON)', '{}')
+            ->addOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017')
+            ->addOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test')
+            ->addOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test')
+            ->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Query timeout (milliseconds)', 30000)
             ->setDescription('Find documents')
             ->setHelp(<<<'EOF'
 Find documents matching the given criteria. The query will be executed using
