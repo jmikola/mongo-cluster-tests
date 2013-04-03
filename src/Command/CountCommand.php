@@ -37,6 +37,7 @@ EOF
     {
         $mongoClient = new \MongoClient($input->getOption('server'));
         $collection = $mongoClient->selectCollection($input->getOption('db'), $input->getOption('collection'));
+        $cmd = $mongoClient->selectCollection($input->getOption('db'), '$cmd');
 
         \MongoCursor::$timeout = (int) $input->getOption('timeout');
         $query = $this->decodeQuery($input->getArgument('query'));
@@ -56,6 +57,10 @@ EOF
                 $event = $stopwatch->stop('count:' . $readPreference);
                 $output->writeln(sprintf('Counting documents with %s read preference timed out after %.3f seconds.', $readPreference, $event->getDuration() / 1000));
             }
+
+            $cmd->setReadPreference($readPreference);
+            $cursor = $cmd->find(array('count' => $collection, 'query' => $query));
+            $this->printExplain($cursor, $output);
         }
     }
 }

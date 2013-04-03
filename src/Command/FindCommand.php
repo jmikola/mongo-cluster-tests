@@ -72,6 +72,8 @@ EOF
                 $event = $stopwatch->stop('find:' . $readPreference);
                 $output->writeln(sprintf('Found %d documents with %s read preference before timing out after %.3f seconds.', $i, $readPreference, $event->getDuration() / 1000));
             }
+
+            $this->printExplain($cursor, $output);
         }
     }
 
@@ -93,5 +95,18 @@ EOF
         }
 
         throw new JsonDecodeException(isset($errors[$error]) ? $errors[$error] : 'Unknown error');
+    }
+
+    protected function printExplain(\MongoCursor $cursor, OutputInterface $output)
+    {
+        $explain = $cursor->explain();
+
+        $output->writeln(sprintf('  explain.server = %s', $explain['server']));
+
+        if (isset($explain['shards'])) {
+            foreach($explain['shards'] as $k => $shard) {
+                $output->writeln(sprintf('  explain.shards[%d].server = %s', $k, $shard['server']));
+            }
+        }
     }
 }
