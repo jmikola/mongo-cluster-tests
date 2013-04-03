@@ -108,8 +108,13 @@ EOF
                 $shard = strtok($shard, '/');
                 foreach ($shardExplains as $i => $shardExplain) {
                     $output->writeln(sprintf('  explain.shards["%s"][%d].server = %s', $shard, $i, $shardExplain['server']));
+                    $output->writeln(sprintf('  explain.shards["%s"][%d].millis = %d', $shard, $i, $shardExplain['millis']));
                 }
             }
+            $output->writeln(sprintf('  explain.millisShardTotal = %d', $explain['millisShardTotal']));
+            $output->writeln(sprintf('  explain.millisShardAvg = %d', $explain['millisShardAvg']));
         }
+
+        $output->writeln(sprintf('  explain.millis = %d', $explain['millis']));
     }
 }
