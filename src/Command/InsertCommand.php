@@ -2,6 +2,7 @@
 
 namespace Command;
 
+use Generator\DocumentGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -14,17 +15,15 @@ class InsertCommand extends Command
     {
         $this
             ->setName('insert')
-            ->setDefinition(array(
-                new InputOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017'),
-                new InputOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test'),
-                new InputOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test'),
-                new InputOption('w', 'w', InputOption::VALUE_OPTIONAL, 'Write concern', 1),
-                new InputOption('wtimeout', null, InputOption::VALUE_OPTIONAL, 'Replication timeout (milliseconds)', 10000),
-                new InputOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Insert timeout (milliseconds)', 30000),
-                new InputOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting'),
-                new InputOption('docs', null, InputOption::VALUE_OPTIONAL, 'Number of documents to insert', 10000),
-                new InputOption('size', null, InputOption::VALUE_OPTIONAL, 'Constant field size (bytes)', 4096),
-            ))
+            ->addOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017')
+            ->addOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test')
+            ->addOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test')
+            ->addOption('w', null, InputOption::VALUE_OPTIONAL, 'Write concern', 1)
+            ->addOption('wtimeout', null, InputOption::VALUE_OPTIONAL, 'Replication timeout (milliseconds)', 10000)
+            ->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Insert timeout (milliseconds)', 30000)
+            ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting')
+            ->addOption('docs', null, InputOption::VALUE_OPTIONAL, 'Number of documents to insert', 10000)
+            ->addOption('size', null, InputOption::VALUE_OPTIONAL, 'Constant field size (bytes)', 4096)
             ->setDescription('Insert documents')
             ->setHelp(<<<'EOF'
 Documents will contain an "x" field with a random integer value and a "y" field
@@ -41,32 +40,40 @@ EOF
 
         $docs = (int) $input->getOption('docs');
         $size = (int) $input->getOption('size');
-        $timeout = (int) $input->getOption('timeout');
 
+        \MongoCursor::$timeout = (int) $input->getOption('timeout');
         $collection->w = is_numeric($w = $input->getOption('w')) ? (int) $w : $w;
         $collection->wtimeout = (int) $input->getOption('wtimeout');
 
-        $stopwatch = new Stopwatch();
-
         if ($input->getOption('drop')) {
-            $stopwatch->start('drop');
-            $collection->drop();
-            $event = $stopwatch->stop('drop');
-            $output->writeln(sprintf('Dropped %s in %.3f seconds.', $collection, $event->getDuration() / 1000));
+            $this->doDrop($collection, $output);
         }
 
-        $value = str_repeat('.', $size);
+        $generator = new DocumentGenerator($docs, str_repeat('.', $size));
 
+        $this->doInsert($collection, $generator, $output);
+    }
+
+    protected function doDrop(\MongoCollection $collection, OutputInterface $output)
+    {
+        $stopwatch = new Stopwatch();
+
+        $stopwatch->start('drop');
+        $collection->drop();
+        $event = $stopwatch->stop('drop');
+        $output->writeln(sprintf('Dropped %s in %.3f seconds.', $collection, $event->getDuration() / 1000));
+    }
+
+    protected function doInsert(\MongoCollection $collection, DocumentGenerator $generator, OutputInterface $output)
+    {
+        $stopwatch = new Stopwatch();
         $stopwatch->start('insert');
 
-        for ($i = 0; $i < $docs; $i++) {
-            $collection->insert(
-                array('x' => mt_rand(), 'y' => $value),
-                array('timeout' => $timeout)
-            );
+        foreach ($generator as $document) {
+            $collection->insert($document);
         }
 
         $event = $stopwatch->stop('insert');
-        $output->writeln(sprintf('Inserted %d documents into %s in %.3f seconds.', $docs, $collection, $event->getDuration() / 1000));
+        $output->writeln(sprintf('Inserted %d documents into %s in %.3f seconds.', count($generator), $collection, $event->getDuration() / 1000));
     }
 }
