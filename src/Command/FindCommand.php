@@ -99,11 +99,16 @@ EOF
     {
         $explain = $cursor->explain();
 
-        $output->writeln(sprintf('  explain.server = %s', $explain['server']));
+        if (isset($explain['server'])) {
+            $output->writeln(sprintf('  explain.server = %s', $explain['server']));
+        }
 
         if (isset($explain['shards'])) {
-            foreach($explain['shards'] as $k => $shard) {
-                $output->writeln(sprintf('  explain.shards[%d].server = %s', $k, $shard['server']));
+            foreach($explain['shards'] as $shard => $shardExplains) {
+                $shard = strtok($shard, '/');
+                foreach ($shardExplains as $i => $shardExplain) {
+                    $output->writeln(sprintf('  explain.shards["%s"][%d].server = %s', $shard, $i, $shardExplain['server']));
+                }
             }
         }
     }
