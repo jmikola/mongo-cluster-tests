@@ -3,25 +3,20 @@
 namespace Command;
 
 use Generator\DocumentGenerator;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Stopwatch\Stopwatch;
 
-class InsertCommand extends Command
+class InsertCommand extends AbstractCommand
 {
     protected function configure()
     {
+        parent::configure();
+
         $this
             ->setName('insert')
-            ->addOption('server', 's', InputOption::VALUE_OPTIONAL, 'MongoDB server', 'mongodb://localhost:27017')
-            ->addOption('db', 'd', InputOption::VALUE_OPTIONAL, 'MongoDB database', 'test')
-            ->addOption('collection', 'c', InputOption::VALUE_OPTIONAL, 'MongoDB collection', 'test')
-            ->addOption('w', null, InputOption::VALUE_OPTIONAL, 'Write concern', 1)
-            ->addOption('wtimeout', null, InputOption::VALUE_OPTIONAL, 'Replication timeout (milliseconds)', 10000)
-            ->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'Insert timeout (milliseconds)', 30000)
-            ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting')
+            ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting (removes indexes and sharding)')
+            ->addOption('remove', null, InputOption::VALUE_NONE, 'Remove before inserting (preserves indexes)')
             ->addOption('docs', null, InputOption::VALUE_OPTIONAL, 'Number of documents to insert', 10000)
             ->addOption('size', null, InputOption::VALUE_OPTIONAL, 'Constant field size (bytes)', 4096)
             ->setDescription('Insert documents')
@@ -35,45 +30,50 @@ EOF
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $mongoClient = new \MongoClient($input->getOption('server'));
-        $collection = $mongoClient->selectCollection($input->getOption('db'), $input->getOption('collection'));
+        if ($input->getOption('drop')) {
+            $this->doDrop($output);
+        }
+
+        if ($input->getOption('remove')) {
+            $this->doRemove($output);
+        }
 
         $docs = (int) $input->getOption('docs');
         $size = (int) $input->getOption('size');
-
-        \MongoCursor::$timeout = (int) $input->getOption('timeout');
-        $collection->w = is_numeric($w = $input->getOption('w')) ? (int) $w : $w;
-        $collection->wtimeout = (int) $input->getOption('wtimeout');
-
-        if ($input->getOption('drop')) {
-            $this->doDrop($collection, $output);
-        }
-
         $generator = new DocumentGenerator($docs, str_repeat('.', $size));
 
-        $this->doInsert($collection, $generator, $output);
+        $this->doInsert($generator, $output);
     }
 
-    protected function doDrop(\MongoCollection $collection, OutputInterface $output)
+    protected function doDrop(OutputInterface $output)
     {
-        $stopwatch = new Stopwatch();
+        $this->stopwatch->start('drop');
 
-        $stopwatch->start('drop');
-        $collection->drop();
-        $event = $stopwatch->stop('drop');
-        $output->writeln(sprintf('Dropped %s in %.3f seconds.', $collection, $event->getDuration() / 1000));
+        $this->collection->drop();
+
+        $event = $this->stopwatch->stop('drop');
+        $output->writeln(sprintf('Dropped %s in %.3f seconds.', $this->collection, $event->getDuration() / 1000));
     }
 
-    protected function doInsert(\MongoCollection $collection, DocumentGenerator $generator, OutputInterface $output)
+    protected function doRemove(OutputInterface $output)
     {
-        $stopwatch = new Stopwatch();
-        $stopwatch->start('insert');
+        $this->stopwatch->start('remove');
+
+        $this->collection->remove();
+
+        $event = $this->stopwatch->stop('remove');
+        $output->writeln(sprintf('Removed all documents in %s in %.3f seconds.', $this->collection, $event->getDuration() / 1000));
+    }
+
+    protected function doInsert(DocumentGenerator $generator, OutputInterface $output)
+    {
+        $this->stopwatch->start('insert');
 
         foreach ($generator as $document) {
-            $collection->insert($document);
+            $this->collection->insert($document);
         }
 
-        $event = $stopwatch->stop('insert');
+        $event = $this->stopwatch->stop('insert');
         $output->writeln(sprintf('Inserted %d documents into %s in %.3f seconds.', count($generator), $collection, $event->getDuration() / 1000));
     }
 }
