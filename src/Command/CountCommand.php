@@ -48,6 +48,12 @@ EOF;
         $output->writeln(sprintf('Using read preference tags: %s', json_encode($readPreferenceTags)));
 
         foreach ($readPreferences as $readPreference) {
+            // Work-around for https://jira.mongodb.org/browse/PHP-735
+            if (-1 === version_compare(phpversion('mongo'), '1.4.0')) {
+                $this->mongo->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
+                $this->collection = $this->mongo->selectCollection($this->db, $this->collection->getName());
+            }
+
             $this->collection->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
             $eventName = 'count:' . $readPreference;
             $this->stopwatch->start($eventName);
