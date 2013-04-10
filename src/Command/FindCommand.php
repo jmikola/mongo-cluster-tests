@@ -66,6 +66,14 @@ EOF;
             } catch (\MongoCursorTimeoutException $e) {
                 $event = $this->stopwatch->stop($eventName);
                 $output->writeln(sprintf('Found %d documents with %s read preference before timing out after %.3f seconds.', $i, $readPreference, $event->getDuration() / 1000));
+                $output->writeln(sprintf('  %s: %s', get_class($e), $e->getMessage()));
+            } catch (\MongoCursorException $e) {
+                $event = $this->stopwatch->stop($eventName);
+                $output->writeln(sprintf('Error finding documents with %s read preference: %s', $readPreference, $e->getMessage()));
+                $output->writeln(sprintf('  %s: %s', get_class($e), $e->getMessage()));
+
+                // Skip explain after a non-timeout MongoCursorException
+                continue;
             }
 
             $this->doExplain($cursor, $output);

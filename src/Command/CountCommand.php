@@ -62,9 +62,10 @@ EOF;
                 $count = $this->collection->count($query);
                 $event = $this->stopwatch->stop($eventName);
                 $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $count, $readPreference, $event->getDuration() / 1000));
-            } catch (\MongoCursorTimeoutException $e) {
+            } catch (\MongoCursorException $e) {
                 $event = $this->stopwatch->stop($eventName);
-                $output->writeln(sprintf('Counting documents with %s read preference timed out after %.3f seconds.', $readPreference, $event->getDuration() / 1000));
+                $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
+                $output->writeln(sprintf('  %s: %s', get_class($e), $e->getMessage()));
             }
         }
 
@@ -81,9 +82,10 @@ EOF;
                 $event = $this->stopwatch->stop($eventName);
                 $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $result['n'], $readPreference, $event->getDuration() / 1000));
                 $output->writeln(sprintf('  $cmd result: %s', json_encode($result)));
-            } catch (\MongoCursorTimeoutException $e) {
+            } catch (\MongoCursorException $e) {
                 $event = $this->stopwatch->stop($eventName);
-                $output->writeln(sprintf('Counting documents with %s read preference timed out after %.3f seconds.', $readPreference, $event->getDuration() / 1000));
+                $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
+                $output->writeln(sprintf('  %s: %s', get_class($e), $e->getMessage()));
             }
         }
     }
