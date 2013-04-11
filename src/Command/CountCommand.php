@@ -73,6 +73,12 @@ EOF;
         $output->writeln(sprintf('Counting documents via findOne() on %s', $cmd));
 
         foreach ($readPreferences as $readPreference) {
+            // Work-around for https://jira.mongodb.org/browse/PHP-735
+            if (-1 === version_compare(phpversion('mongo'), '1.4.0')) {
+                $this->mongo->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
+                $cmd = $this->mongo->selectCollection($this->db, '$cmd');
+            }
+
             $cmd->setReadPreference($readPreference, $readPreference === \MongoClient::RP_PRIMARY ? array() : $readPreferenceTags);
             $eventName = '$cmd:' . $readPreference;
             $this->stopwatch->start($eventName);
