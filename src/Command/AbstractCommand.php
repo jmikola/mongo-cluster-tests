@@ -52,7 +52,7 @@ Read preferences must correspond to a valid read preference string:
    * primaryPreferred
    * secondary
    * secondaryPreferred
-   * nearest "primary",
+   * nearest
 
 Read preference tags follow the format "key:value,key:value" for each tag set.
 Multiple read preference tags may be specified like so:
