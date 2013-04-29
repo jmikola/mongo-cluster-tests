@@ -61,7 +61,13 @@ EOF;
             try {
                 $count = $this->collection->count($query);
                 $event = $this->stopwatch->stop($eventName);
-                $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $count, $readPreference, $event->getDuration() / 1000));
+                // Work-around for https://jira.mongodb.org/browse/PHP-781
+                if (is_array($count)) {
+                    $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
+                    $output->writeln(sprintf('  Command result: %s', json_encode($count)));
+                } else {
+                    $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $count, $readPreference, $event->getDuration() / 1000));
+                }
             } catch (\MongoCursorException $e) {
                 $event = $this->stopwatch->stop($eventName);
                 $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
@@ -86,8 +92,12 @@ EOF;
             try {
                 $result = $cmd->findOne(array('count' => $this->collection->getName(), 'query' => $query));
                 $event = $this->stopwatch->stop($eventName);
-                $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $result['n'], $readPreference, $event->getDuration() / 1000));
-                $output->writeln(sprintf('  $cmd result: %s', json_encode($result)));
+                if (!$result['ok']) {
+                    $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
+                } else {
+                    $output->writeln(sprintf('Counted %d documents with %s read preference in %.3f seconds.', $result['n'], $readPreference, $event->getDuration() / 1000));
+                }
+                $output->writeln(sprintf('  Command result: %s', json_encode($result)));
             } catch (\MongoCursorException $e) {
                 $event = $this->stopwatch->stop($eventName);
                 $output->writeln(sprintf('Error counting documents with %s read preference after %.3f seconds', $readPreference, $event->getDuration() / 1000));
