@@ -2,7 +2,7 @@
 
 namespace Command;
 
-use Generator\DocumentGenerator;
+use Generator\DocumentGeneratorInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class BatchInsertCommand extends InsertCommand
@@ -24,7 +24,7 @@ EOF;
         $this->setHelp($help . "\n\n" . $this->getHelp());
     }
 
-    protected function doInsert(DocumentGenerator $generator, OutputInterface $output)
+    protected function doInsert(DocumentGeneratorInterface $generator, OutputInterface $output)
     {
         $bsonSize = $generator->getDocumentBsonSize();
         $batchSize = max(1, (int) (4194304 / $bsonSize));

@@ -2,7 +2,9 @@
 
 namespace Command;
 
-use Generator\DocumentGenerator;
+use Generator\DocumentGeneratorInterface;
+use Generator\RandomDocumentGenerator;
+use Generator\SequentialDocumentGenerator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -16,6 +18,8 @@ class InsertCommand extends AbstractCommand
         $this
             ->setName('insert')
             ->setDescription('Insert documents')
+            ->addOption('random', null, InputOption::VALUE_NONE, 'Use random generation for integer field')
+            ->addOption('sequential', null, InputOption::VALUE_NONE, 'Use sequential generation for integer field')
             ->addOption('drop', null, InputOption::VALUE_NONE, 'Drop before inserting')
             ->addOption('remove', null, InputOption::VALUE_NONE, 'Remove before inserting')
             ->addOption('docs', null, InputOption::VALUE_OPTIONAL, 'Number of documents to insert', 10000)
@@ -27,12 +31,14 @@ Documents inserted to the database will have the following structure:
 
     {
         "_id": <info><ObjectId></info>,
-        "x": <info><random-integer></info>,
-        "y": <info><fixed-string></info>
+        "x": <info><integer></info>,
+        "y": <info><string></info>
     }
 
 The number of documents to be inserted is configurable, as is the size of the
-fixed string.
+fixed string field. The <info>random</info> and <info>sequential</info> options
+are mutually exclusive and will determine the mode for generating integer field
+values. You must specify a mode.
 
 The <info>drop</info> and <info>remove</info> options may be used to clear the collection of existing
 documents before insertion. When inserting into a sharded cluster, dropping the
@@ -55,7 +61,19 @@ EOF;
 
         $docs = (int) $input->getOption('docs');
         $size = (int) $input->getOption('size');
-        $generator = new DocumentGenerator($docs, str_repeat('.', $size));
+
+        $random = $input->getOption('random');
+        $sequential = $input->getOption('sequential');
+
+        if (!($random xor $sequential)) {
+            throw new \InvalidArgumentException('Either random or sequential mode must be specified');
+        }
+
+        $fixedString = str_repeat('.', $size);
+
+        $generator = $random
+            ? new RandomDocumentGenerator($docs, $fixedString)
+            : new SequentialDocumentGenerator($docs, $fixedString);
 
         $this->doInsert($generator, $output);
     }
@@ -80,7 +98,7 @@ EOF;
         $output->writeln(sprintf('Removed all documents in %s in %.3f seconds.', $this->collection, $event->getDuration() / 1000));
     }
 
-    protected function doInsert(DocumentGenerator $generator, OutputInterface $output)
+    protected function doInsert(DocumentGeneratorInterface $generator, OutputInterface $output)
     {
         $this->stopwatch->start('insert');
 

@@ -2,18 +2,18 @@
 
 namespace Generator;
 
-class DocumentGenerator implements \Countable, \Iterator
+abstract class AbstractDocumentGenerator implements DocumentGeneratorInterface
 {
-    private $size;
-    private $constantValue;
-    private $position;
-    private $current;
-    private $documentBsonSize;
+    protected $size;
+    protected $fixedString;
+    protected $position;
+    protected $current;
+    protected $documentBsonSize;
 
-    public function __construct($size, $constantValue)
+    public function __construct($size, $fixedString)
     {
         $this->size = $size;
-        $this->constantValue = $constantValue;
+        $this->fixedString = $fixedString;
         $this->position = 0;
     }
 
@@ -61,12 +61,5 @@ class DocumentGenerator implements \Countable, \Iterator
         return $this->position < $this->size;
     }
 
-    private function generate()
-    {
-        return array(
-            '_id' => new \MongoId(),
-            'x' => mt_rand(),
-            'y' => $this->constantValue,
-        );
-    }
+    abstract protected function generate();
 }
