@@ -40,7 +40,6 @@ abstract class AbstractCommand extends Command
             ->addOption('socketTimeoutMS', null, InputOption::VALUE_OPTIONAL, 'MongoClient socket timeout (milliseconds)', 30000)
             ->addOption('w', null, InputOption::VALUE_OPTIONAL, 'MongoClient write concern', 1)
             ->addOption('wTimeout', null, InputOption::VALUE_OPTIONAL, 'MongoClient write concern timeout (milliseconds)', 10000)
-            ->addOption('timeout', null, InputOption::VALUE_OPTIONAL, 'MongoCursor timeout (milliseconds)', 30000)
             ->setHelp(<<<'EOF'
 <info>Common Options</info>
 
@@ -76,7 +75,7 @@ EOF
             }
         }
 
-        foreach (array('connectTimeoutMS', 'socketTimeoutMS', 'timeout', 'wTimeout') as $option) {
+        foreach (array('connectTimeoutMS', 'socketTimeoutMS', 'wTimeout') as $option) {
             if (null !== ($value = $input->getOption($option))) {
                 $options[$option] = (int) $value;
             }
